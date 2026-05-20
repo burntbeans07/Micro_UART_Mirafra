@@ -15,8 +15,7 @@ module top #(parameter WIDTH = 8,parameter BAUD  = 2400)(
     output wire rec_readyH,
     output wire rec_busy,
     output wire uart_tx,
-    input  wire uart_rx,
-    output wire clk_baud );
+    input  wire uart_rx );
 
   
 
