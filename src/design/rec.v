@@ -20,8 +20,8 @@ module rec #(parameter WIDTH = 8)(
   
     always @ (posedge clk_baud or negedge rst) begin
 	if(!rst)begin
-		ff2 <= 0;
-		ff1 <= 0;
+		ff2 <= 1;
+		ff1 <= 1;
 	end
 	else begin
 		ff2 <= ff1;
@@ -39,10 +39,12 @@ module rec #(parameter WIDTH = 8)(
             rec_dataH <= 0;
             rec_readyH <= 1'b1;
             rec_busy <= 0;
+	    a<=0;
         end
         else begin
             case(state)
             IDLE: begin
+		
                 if(ff2 == 0) begin
                     state <= START;
                     baud_count <= 0;
@@ -50,47 +52,51 @@ module rec #(parameter WIDTH = 8)(
                     rec_readyH <= 0;
                 end
             end
+	    
+	    START: begin
+    		if(baud_count == 4) begin
+        		baud_count <= 0;
+        	if(ff2 == 0)
+            		state <= DATA;
+		
+       		else
+            		state <= IDLE;
+    		end
 
-            START: begin
-                baud_count <= baud_count + 1;
-                if(baud_count == 8) begin
-                    if(ff2 == 0) begin
-                        state <= DATA;
-                        baud_count <= 0;
-                    end
-                    else begin
-                        state <= IDLE;
-                    end
-                end
-            end
+    		else begin
+        		baud_count <= baud_count + 1;
+    		end
+	    end
+
 
             DATA: begin
-                baud_count <= baud_count + 1;
-                if(baud_count == 15) begin
-                    baud_count <= 0;
-                    rx_shift <= {ff2, rx_shift[WIDTH-1:1]};
-                    if(bit_count == WIDTH-1) begin
-                        bit_count <=0;
-                        state <= STOP;
-                    end
-                    else begin
-                        bit_count <= bit_count + 1;
-                    end
-                end
-            end
+    		if(baud_count == 15) begin
+        		baud_count <= 0;
+        		rx_shift <= {ff2, rx_shift[WIDTH-1:1]};
+        		if(bit_count == WIDTH-1) begin
+            			bit_count <= 0;
+            			state <= STOP;
+        		end
+        		else
+            			bit_count <= bit_count + 1;
+    		end
+    		else 
+        		baud_count <= baud_count + 1;
+		end
             STOP: begin
-                baud_count <= baud_count + 1;
-                if(baud_count == 15) begin
-                    baud_count <= 0;
-                    if(ff2 == 1) begin
-                        rec_dataH <= rx_shift;
-                        rec_readyH <= 1;
-                    end
-                    bit_count <= 0;
-                    state <= IDLE;
-                    rec_busy <= 0;
-                end
-            end
+    		if(baud_count == 15) begin
+        		baud_count <= 0;
+        		if(ff2 == 1) begin
+            			rec_dataH <= rx_shift;
+            			rec_readyH <= 1;
+        		end
+        	state <= IDLE;
+        	rec_busy <= 0;
+    		end
+    		else
+        		baud_count <= baud_count + 1;
+		end
+
             default:state <= IDLE;
             endcase
         end
