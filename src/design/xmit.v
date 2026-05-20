@@ -1,3 +1,5 @@
+`timescale 1ns / 1ps
+
 `default_nettype none
 module xmit #(parameter WIDTH = 8)(
     input  wire clk_baud,
